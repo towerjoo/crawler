@@ -33,7 +33,8 @@ class HeaderHandler(Handler):
         ret = {
             "status-code" : str(code),
         }
-        ret.update(headers.dict)
+        for k in self.config.get('interests').get('header'):
+            ret.update({ k : headers.dict.get(k)})
         return ret
 
 class MetaHandler(Handler):
@@ -55,6 +56,7 @@ class MetaHandler(Handler):
     def handle_resp(self, orig_cont, rq):
         soup = BS(orig_cont)
         ret = {
+            "word-count" : len(soup.get_text().split(" ")), # not precise, can be refined later
             "title" : soup.title.string,
             "title-length" : len(soup.title.string),
         }
@@ -79,6 +81,28 @@ class LinkHandler(Handler):
             "links" : self.parse_links(soup),
         }
         return ret
+
+class TitleHandler(Handler):
+    def __init__(self, config=default_config):
+        super(TitleHandler, self).__init__(config)
+        self.key = "title"
+
+    def parse_titles(self, soup, tag="h1"):
+        titles = soup.find_all(tag)
+        ret = []
+        for t in titles:
+            ret.append(t.string)
+        return ret
+
+    def handle_resp(self, orig_cont, rq):
+        soup = BS(orig_cont)
+        titles_interests = self.config.get('interests').get('title')
+        for t in titles_interests:
+            ret = {
+                t : self.parse_titles(soup, t),
+            }
+        return ret
+        
         
 class Crawler:
     def __init__(self, url=None):
@@ -91,6 +115,7 @@ class Crawler:
         rq.close()
         return self.handle_response(cont, rq)
 
+    @TitleHandler()
     @LinkHandler()
     @MetaHandler()
     @HeaderHandler()
