@@ -7,6 +7,7 @@ class Handler(object):
     def __init__(self, config=default_config):
         self.key = "UNKNOWN"
         self.config = config
+        self.supported_types = ["text/html"]
 
     def handle_resp(self, orig_cont, rq):
         """orig_cont is the content readed from urllib2
@@ -14,10 +15,20 @@ class Handler(object):
         """
         raise NotImplementedError()
 
+    def can_handle(self, content_type):
+        if "all" in self.supported_types:
+            return True
+        if content_type in self.supported_types:
+            return True
+        return False
+
     def __call__(self, func):
         def wrapper(inst, orig_cont, rq):
-            added_cont = self.handle_resp(orig_cont, rq)
+            headers = rq.headers
             resp = func(inst, orig_cont, rq)
+            if not self.can_handle(headers.get("content-type")):
+                return resp
+            added_cont = self.handle_resp(orig_cont, rq)
             resp.update({self.key : added_cont})
             return resp
         return wrapper
@@ -26,6 +37,7 @@ class HeaderHandler(Handler):
     def __init__(self, config=default_config):
         super(HeaderHandler, self).__init__(config)
         self.key = "header"
+        self.supported_types = ["all"]  # means support all
 
     def handle_resp(self, orig_cont, rq):
         code = rq.code
@@ -128,7 +140,10 @@ class Crawler:
 
 
 if __name__ == "__main__":
+    import sys
     url = "http://localhost:4000"
+    if len(sys.argv) == 2:
+        url = sys.argv[1]
     crawler = Crawler(url)
     crawler.output(crawler.request())
     
