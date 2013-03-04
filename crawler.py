@@ -7,7 +7,7 @@ class Handler(object):
     def __init__(self, config=default_config):
         self.key = "UNKNOWN"
         self.config = config
-        self.supported_types = ["text/html"]
+        self.supported_types = ["text/html", "text/plain"]
 
     def handle_resp(self, orig_cont, rq):
         """orig_cont is the content readed from urllib2
