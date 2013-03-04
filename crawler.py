@@ -18,7 +18,7 @@ class Handler(object):
     def can_handle(self, content_type):
         if "all" in self.supported_types:
             return True
-        if content_type in self.supported_types:
+        if content_type.split(";")[0] in self.supported_types:
             return True
         return False
 
@@ -141,7 +141,7 @@ class Crawler:
 
 if __name__ == "__main__":
     import sys
-    url = "http://localhost:4000"
+    url = "http://www.google.com"
     if len(sys.argv) == 2:
         url = sys.argv[1]
     crawler = Crawler(url)
